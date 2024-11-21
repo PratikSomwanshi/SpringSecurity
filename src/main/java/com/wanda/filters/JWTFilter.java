@@ -30,10 +30,19 @@ public class JWTFilter extends OncePerRequestFilter{
 	
 	private String username;
 	
+	
+	
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
+		
+		String path = request.getRequestURI();
+		
+		if(path.equals("/login") || path.equals("/register")) {
+			filterChain.doFilter(request, response);
+			return;
+		}
 		
 		System.out.println("jwt filter");
 		
@@ -43,6 +52,7 @@ public class JWTFilter extends OncePerRequestFilter{
 		
 		try {
 			
+			this.jwtService.extractTocken(bearer);
 			
 			this.username = this.jwtService.extractUserName();
 			
@@ -54,7 +64,7 @@ public class JWTFilter extends OncePerRequestFilter{
 				UserDetails userDetails = this.context.getBean(CustomUserDetailService.class).loadUserByUsername(this.username);
 				
 				
-				this.jwtService.validate(bearer, userDetails);
+				this.jwtService.validate(userDetails);
 				
 				UsernamePasswordAuthenticationToken authTocken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 				
@@ -74,7 +84,8 @@ public class JWTFilter extends OncePerRequestFilter{
 			
 			response.sendError(200, e.getMessage());
 		} catch (Exception e) {
-			response.sendError(200, "Internal Server Error");
+			e.printStackTrace();
+			response.sendError(200, e.getMessage());
 			return;
 		}
 		

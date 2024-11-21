@@ -36,13 +36,13 @@ public class SpringSecurityConfig {
 				.authorizeHttpRequests(
 						req -> {
 							req
-								.requestMatchers("/", "login", "register").permitAll()
+								.requestMatchers("/", "/login", "/register").permitAll()
 								.requestMatchers("private", "user").hasAnyAuthority("USER", "MANAGER")
 								.requestMatchers("manager").hasAuthority("MANAGER")
 								.anyRequest().permitAll();
 						})
-				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-				.httpBasic(Customizer.withDefaults());
+				.httpBasic(Customizer.withDefaults())
+				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
 
 			return auth.build();

@@ -9,20 +9,20 @@ import java.util.Map;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import com.wanda.utils.exception.CustomException;
-import com.wanda.utils.response.ErrorResponse;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
 @Service
 public class JWTService {
 	
 	private SecretKey secretKey;
+	
+	private String mainTocken;
 	
 	public JWTService() {
 		try {
@@ -69,13 +69,9 @@ public class JWTService {
 		
 		
 	}
+	
+	public void extractTocken(String bearer) {
 
-
-
-	public void validate(String bearer, UserDetails userDetails) {
-		
-//		throw new CustomException("checking validate error");
-		
 		if(bearer.isEmpty()) {
 			throw new CustomException("Tocken Not Found");
 		}
@@ -87,25 +83,51 @@ public class JWTService {
 		String tocken = bearer.substring(7);
 		
 		System.out.println(tocken);
-	
+		
+		this.mainTocken = tocken;
+		
+		if(!isTockenValid(tocken)) {
+			throw new CustomException("Tocken Expired");
+		}
+		
+		
+	}
+
+
+
+	public void validate(UserDetails userDetails) {
+		
+		
+		var isValidUser = userDetails.getUsername().equals(this.extractUserName()) && isTockenValid(mainTocken);
+		
+		if(!isValidUser) {
+			throw new CustomException("User not valid");
+		}
+		
+		
 		
 	}
 	
-	public ResponseEntity<ErrorResponse> getErrorResponse(Exception ex) {
-		ErrorResponse errorDetails = new ErrorResponse(
-	            HttpStatus.NOT_FOUND.value(),	
-	            ex.getMessage(),
-	            "dummy"
-	        );
-	    
-	    	
-	        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
-	}
+	
 
 
 
 	public String extractUserName() {
-		return "manager";
+		return this.getClaims(mainTocken).getSubject();
+	}
+	
+	
+	public Boolean isTockenValid(String tocken) {
+		return this.getClaims(tocken).getExpiration().after(new Date());
+	}
+	
+	public Claims getClaims(String tocken) {
+		 return Jwts
+				 	.parser()
+		            .verifyWith(this.secretKey)
+		            .build()
+		            .parseSignedClaims(tocken)
+		            .getPayload();
 	}
 
 }
