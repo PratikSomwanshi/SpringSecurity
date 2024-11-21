@@ -36,5 +36,7 @@ public class UserController {
 	@PostMapping("/login")
 	public String login(@RequestBody User user) {
 		return this.userService.verify(user);
+//		return "Hello";
+//		throw new CustomException("checking exception");
 	}
 }

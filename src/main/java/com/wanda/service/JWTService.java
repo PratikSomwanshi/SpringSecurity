@@ -9,9 +9,13 @@ import java.util.Map;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import com.wanda.utils.exception.CustomException;
+import com.wanda.utils.response.ErrorResponse;
 
 import io.jsonwebtoken.Jwts;
 
@@ -49,12 +53,10 @@ public class JWTService {
 
 		return Jwts
 					.builder()
-					.claims()
-					.add(claims)
+					.claims(claims)
 					.subject(username)
 					.issuedAt(new Date(System.currentTimeMillis()))
 					.expiration(new Date(System.currentTimeMillis() + 60 * 60 * 10))
-					.and()
 					.signWith( getKey(), Jwts.SIG.HS256 )
 					.compact();
 
@@ -66,6 +68,44 @@ public class JWTService {
 		return this.secretKey;
 		
 		
+	}
+
+
+
+	public void validate(String bearer, UserDetails userDetails) {
+		
+//		throw new CustomException("checking validate error");
+		
+		if(bearer.isEmpty()) {
+			throw new CustomException("Tocken Not Found");
+		}
+		
+		if(!bearer.startsWith("Bearer")) {
+			throw new CustomException("Invalid Tocken new");
+		}
+		
+		String tocken = bearer.substring(7);
+		
+		System.out.println(tocken);
+	
+		
+	}
+	
+	public ResponseEntity<ErrorResponse> getErrorResponse(Exception ex) {
+		ErrorResponse errorDetails = new ErrorResponse(
+	            HttpStatus.NOT_FOUND.value(),	
+	            ex.getMessage(),
+	            "dummy"
+	        );
+	    
+	    	
+	        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+	}
+
+
+
+	public String extractUserName() {
+		return "manager";
 	}
 
 }

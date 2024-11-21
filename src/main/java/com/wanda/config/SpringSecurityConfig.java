@@ -12,9 +12,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.wanda.filters.JWTFilter;
 import com.wanda.service.CustomUserDetailService;
-import com.wanda.utils.exception.CustomException;
 
 @Configuration
 @EnableWebSecurity
@@ -22,22 +23,35 @@ public class SpringSecurityConfig {
 
 	@Autowired
 	private CustomUserDetailService userDetailService;
+	
+	@Autowired
+	private JWTFilter jwtFilter;
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity auth) {
 
 		try {
-			auth.csrf(csrf -> csrf.disable()).authorizeHttpRequests(req -> {
-				req.requestMatchers("/", "/login", "/register").permitAll().requestMatchers("private", "user")
-						.hasAnyAuthority("USER", "MANAGER").requestMatchers("manager").hasAuthority("MANAGER")
-						.anyRequest().permitAll();
-			}).httpBasic(Customizer.withDefaults());
+			auth
+				.csrf(csrf -> csrf.disable())
+				.authorizeHttpRequests(
+						req -> {
+							req
+								.requestMatchers("/", "login", "register").permitAll()
+								.requestMatchers("private", "user").hasAnyAuthority("USER", "MANAGER")
+								.requestMatchers("manager").hasAuthority("MANAGER")
+								.anyRequest().permitAll();
+						})
+				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+				.httpBasic(Customizer.withDefaults());
+
 
 			return auth.build();
-
 		} catch (Exception e) {
-			throw new CustomException(e.getMessage());
+			e.printStackTrace();
+//			throw new CustomException(e.getMessage());
+			return null;
 		}
+
 	}
 
 	@Bean
